@@ -65,11 +65,11 @@ class FluxTools:
     def getNoOscAsimov(self,flux):
         return self.getAsimov(flux,self.unity)
 
-    def getNuMuAsimov(self, flux, osccalc):
-        if(flux!=self.lastnumuflux or osccalc!=self.lastnumuosccalc):
+    def getNuMuAsimov(self, flux, osccalc,force=False):
+        if(flux!=self.lastnumuflux or hash(osccalc)!=self.lastnumuosccalc or force):
             binVals=self.getAsimov(flux,osccalc.MuToMu)
             self.lastnumuflux=flux
-            self.lastnumuosccalc=osccalc
+            self.lastnumuosccalc=hash(osccalc)
             self.lastnumuVals=binVals
             return binVals
         return self.lastnumuVals
@@ -79,11 +79,11 @@ class FluxTools:
         return [np.random.poisson(x) for x in binVals]
 
 
-    def getNuElecAsimov(self, flux, osccalc):
-        if(flux!=self.lastnueflux or osccalc!=self.lastnueosccalc):
+    def getNuElecAsimov(self, flux, osccalc,force=False):
+        if(flux!=self.lastnueflux or hash(osccalc)!=self.lastnueosccalc or force):
             binVals=self.getAsimov(flux,osccalc.MuToElec)
             self.lastnueflux=flux
-            self.lastnueosccalc=osccalc
+            self.lastnueosccalc=hash(osccalc)
             self.lastnueVals=binVals
             return binVals
         return self.lastnueVals
@@ -91,4 +91,18 @@ class FluxTools:
     def genNuElecExperiment(self,flux,osccalc):
         binVals=self.getNuElecAsimov(flux,osccalc)
         return [np.random.poisson(x) for x in binVals]
+
+    def makeNuMuAsimovArray(self,flux,osccalc,dm32Array,sinSq23Array,dcpArray):
+        a = []
+        for dcp in dcpArray:
+            mat = []
+            for sSq23 in sinSq23Array:
+                row = []
+                for dm32 in dm32Array:
+                    osccalc.updateOscParams(sinSqTheta23=sSq23,deltamSq32=dm32,dcp=dcp)
+                    val=self.getNuMuAsimov(flux,osccalc,force=True)
+                    row.append(val)
+                mat.append(row)
+            a.append(mat)
+        return a
 
